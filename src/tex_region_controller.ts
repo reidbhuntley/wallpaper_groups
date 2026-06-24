@@ -55,6 +55,7 @@ class TexRegionController {
     texRegion: TexRegion = new TexRegion();
     private group: WallpaperGroup = new WallpaperGroup("p1");
     private mode: TransformMode = { kind: null };
+    private texture: ImageBitmap | null = null;
 
     private widthDesired: number;
     private heightDesired: number;
@@ -71,6 +72,10 @@ class TexRegionController {
         window.addEventListener("mousemove", (e) => this.onMouseMove(e));
         window.addEventListener("mouseup", (e) => this.onMouseUp(e));
         requestAnimationFrame(() => this.render());
+    }
+
+    getGroup(): WallpaperGroup {
+        return this.group;
     }
 
     setGroup(group: WallpaperGroup) {
@@ -353,6 +358,29 @@ class TexRegionController {
         this.shearDesired = this.texRegion.getShearFactor();
     }
 
+    setTextureFile(file: ImageBitmapSource) {
+        createImageBitmap(file).then((bitmap) => {
+            const width = bitmap.width;
+            const height = bitmap.height;
+            if (width === height) {
+                this.setTextureBitmap(bitmap);
+            } else {
+                const size = Math.min(width, height);
+                const x = (width - size) * 0.5;
+                const y = (height - size) * 0.5;
+                createImageBitmap(bitmap, x, y, size, size).then(
+                    (croppedBitmap) => {
+                        this.setTextureBitmap(croppedBitmap);
+                    },
+                );
+            }
+        });
+    }
+
+    private setTextureBitmap(texture: ImageBitmap) {
+        this.texture = texture;
+    }
+
     private getCursorStyle(event: MouseEvent): string {
         if (event.buttons & 1 && this.mode.kind !== null) {
             return "grabbing";
@@ -411,7 +439,7 @@ class TexRegionController {
             return out;
         });
 
-        const drawPath = (path: vec2[]) => {
+        const tracePath = (path: vec2[]) => {
             if (path.length === 0) {
                 return;
             }
@@ -423,20 +451,27 @@ class TexRegionController {
                 ctx.lineTo(point[0], point[1]);
             }
             ctx.closePath();
-            ctx.stroke();
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (this.texture) {
+            ctx.drawImage(this.texture, 0, 0, canvas.width, canvas.height);
+        }
 
         ctx.lineWidth = 2.0;
         ctx.strokeStyle = "grey";
         ctx.setLineDash([]);
-        drawPath(patternVerts);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+        tracePath(patternVerts);
+        ctx.fill();
+        tracePath(patternVerts);
+        ctx.stroke();
 
         ctx.lineWidth = 3.0;
         ctx.strokeStyle = "lightgrey";
         ctx.setLineDash([10.0, 10.0]);
-        drawPath(corners);
+        tracePath(corners);
+        ctx.stroke();
 
         ctx.fillStyle = "white";
         ctx.lineWidth = 1.0;

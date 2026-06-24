@@ -27,3 +27,8 @@ body {
     border: 6px solid;
     border-color: grey;
 }
+
+.tex-region-settings {
+    display: flex;
+    justify-content: space-between;
+}

@@ -10,11 +10,6 @@ texRegionCanvas.width = TEX_REGION_SIZE;
 texRegionCanvas.height = TEX_REGION_SIZE;
 
 const texRegionController = new TexRegionController(texRegionCanvas);
-window.addEventListener("keypress", (e) => {
-    if (e.code === "KeyQ") {
-        console.log(texRegionController);
-    }
-});
 
 const groupSelect = document.getElementById(
     "group-select",

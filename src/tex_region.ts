@@ -109,7 +109,7 @@ class TexRegion {
         ];
     }
 
-    setWidth(width: number, growFrom: "LEFT" | "RIGHT" | "CENTER") {
+    setWidth(width: number, growFrom: "LEFT" | "RIGHT") {
         const widthOld = this.getWidth();
         const widthNew = Math.min(Math.max(width, WIDTH_MIN), WIDTH_MAX);
         const widthDiff = widthNew - widthOld;
@@ -120,15 +120,10 @@ class TexRegion {
             case "RIGHT":
                 this.extentRT[0] += widthDiff;
                 break;
-            case "CENTER":
-                const hwidthDiff = widthDiff * 0.5;
-                this.extentLB[0] -= hwidthDiff;
-                this.extentRT[0] += hwidthDiff;
-                break;
         }
     }
 
-    setHeight(height: number, growFrom: "BOTTOM" | "TOP" | "CENTER") {
+    setHeight(height: number, growFrom: "BOTTOM" | "TOP") {
         const heightOld = this.getHeight();
         const heightNew = Math.min(Math.max(height, HEIGHT_MIN), HEIGHT_MAX);
         const heightDiff = heightNew - heightOld;
@@ -139,12 +134,35 @@ class TexRegion {
             case "TOP":
                 this.extentRT[1] += heightDiff;
                 break;
-            case "CENTER":
-                const hheightDiff = heightDiff * 0.5;
-                this.extentLB[1] -= hheightDiff;
-                this.extentRT[1] += hheightDiff;
-                break;
         }
+    }
+
+    setSizeFixedAspectRatio(width: number, height: number) {
+        const aspectRatio = width / height;
+        if (width < WIDTH_MIN) {
+            width = WIDTH_MIN;
+            height = width / aspectRatio;
+        }
+        if (height < HEIGHT_MIN) {
+            height = HEIGHT_MIN;
+            width = height * aspectRatio;
+        }
+        if (width > WIDTH_MAX) {
+            width = WIDTH_MAX;
+            height = width / aspectRatio;
+        }
+        if (height > HEIGHT_MAX) {
+            height = HEIGHT_MAX;
+            width = height * aspectRatio;
+        }
+        const widthOld = this.getWidth();
+        const heightOld = this.getHeight();
+        const delta = vec2.fromValues(
+            (width - widthOld) * 0.5,
+            (height - heightOld) * 0.5,
+        );
+        vec2.sub(this.extentLB, this.extentLB, delta);
+        vec2.add(this.extentRT, this.extentRT, delta);
     }
 
     getShearFactor(): number {
@@ -203,6 +221,9 @@ class TexRegion {
             clipFactor = Math.min(clipFactor, (1.0 - centerOld[1]) / delta[1]);
         }
 
+        if (isNaN(clipFactor)) {
+            clipFactor = 0.0;
+        }
         clipFactor = Math.max(clipFactor, 0.0);
 
         vec2.scaleAndAdd(this.translation, this.translation, delta, clipFactor);

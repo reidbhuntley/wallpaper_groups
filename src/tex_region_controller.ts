@@ -53,7 +53,7 @@ const CORNER_RADIUS = 1.0 / 48.0;
 class TexRegionController {
     canvas: HTMLCanvasElement;
     texRegion: TexRegion = new TexRegion();
-    group: WallpaperGroup = new WallpaperGroup("p1");
+    group: WallpaperGroup = new WallpaperGroup("p6");
     mode: TransformMode = { kind: null };
 
     constructor(canvas: HTMLCanvasElement) {
@@ -271,9 +271,7 @@ class TexRegionController {
                         return [length * aspectRatio, length];
                 }
             })();
-            // TODO: fix behavior when only one axis has room to grow
-            this.texRegion.setWidth(width, "CENTER");
-            this.texRegion.setHeight(height, "CENTER");
+            this.texRegion.setSizeFixedAspectRatio(width, height);
         }
     }
 

@@ -9,17 +9,17 @@ body {
     margin: 0;
 }
 
-#output-canvas-div {
+.output-canvas-div {
     flex: 1 1 0;
     position: relative;
 }
 
-#output-canvas {
+.output-canvas {
     position: absolute;
     display: flex;
 }
 
-#tex-region-div {
+.tex-region-div {
     position: absolute;
     display: inline-block;
     margin: 2rem;

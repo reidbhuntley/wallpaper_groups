@@ -48,21 +48,50 @@ type MouseTarget =
     | "INSIDE";
 
 const EDGE_RADIUS = 1.0 / 48.0;
-const CORNER_RADIUS = 1.0 / 48.0;
+const CORNER_RADIUS = 1.0 / 32.0;
 
 class TexRegionController {
     canvas: HTMLCanvasElement;
     texRegion: TexRegion = new TexRegion();
-    group: WallpaperGroup = new WallpaperGroup("p6");
-    mode: TransformMode = { kind: null };
+    private group: WallpaperGroup = new WallpaperGroup("p1");
+    private mode: TransformMode = { kind: null };
+
+    private widthDesired: number;
+    private heightDesired: number;
+    private shearDesired: number;
 
     constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+        this.widthDesired = this.texRegion.getWidth();
+        this.heightDesired = this.texRegion.getHeight();
+        this.shearDesired = this.texRegion.getShearFactor();
+        this.setGroup(this.group);
 
+        this.canvas = canvas;
         canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
         window.addEventListener("mousemove", (e) => this.onMouseMove(e));
         window.addEventListener("mouseup", (e) => this.onMouseUp(e));
         requestAnimationFrame(() => this.render());
+    }
+
+    setGroup(group: WallpaperGroup) {
+        this.group = group;
+        const pattern = group.getPattern();
+        if (!pattern.canShear) {
+            this.texRegion.setShearFactor(0.0);
+        } else {
+            this.texRegion.setShearFactor(this.shearDesired);
+        }
+        if (pattern.fixedAspectRatio === null) {
+            this.texRegion.setSizeFixedAspectRatio(
+                this.widthDesired,
+                this.heightDesired,
+            );
+        } else {
+            this.texRegion.setSizeFixedAspectRatio(
+                this.widthDesired,
+                this.widthDesired / pattern.fixedAspectRatio,
+            );
+        }
     }
 
     getScaleFactor(): number {
@@ -273,6 +302,9 @@ class TexRegionController {
             })();
             this.texRegion.setSizeFixedAspectRatio(width, height);
         }
+
+        this.widthDesired = this.texRegion.getWidth();
+        this.heightDesired = this.texRegion.getHeight();
     }
 
     private onRotate(event: MouseEvent, mode: TransformModeRotate) {
@@ -318,6 +350,7 @@ class TexRegionController {
         const deltaX = (mousePos[0] - referenceExtent[0]) * sign * 2;
         const deltaY = this.texRegion.getHeight();
         this.texRegion.setShearFactor(deltaX / deltaY);
+        this.shearDesired = this.texRegion.getShearFactor();
     }
 
     private getCursorStyle(event: MouseEvent): string {
@@ -409,7 +442,7 @@ class TexRegionController {
         ctx.lineWidth = 1.0;
         ctx.strokeStyle = "lightgrey";
         ctx.setLineDash([]);
-        const rad = CORNER_RADIUS * this.getScaleFactor();
+        const rad = CORNER_RADIUS * 0.6 * this.getScaleFactor();
         for (const corner of corners) {
             ctx.beginPath();
             ctx.ellipse(corner[0], corner[1], rad, rad, 0, 0, 2 * Math.PI);

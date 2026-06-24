@@ -179,19 +179,20 @@ class TexRegionController {
                 case "LT":
                 case "RB":
                 case "RT":
-                    if (event.ctrlKey) {
+                    if (event.altKey) {
                         this.texRegion.normalize();
                         return {
                             kind: "SHEAR",
                             corner: target,
                         };
+                    } else {
+                        this.texRegion.normalize();
+                        return {
+                            kind: "ROTATE",
+                            mouseTexStart: this.mouseEventToTexCoords(event),
+                            rotationStart: this.texRegion.getRotation(),
+                        };
                     }
-                    this.texRegion.normalize();
-                    return {
-                        kind: "ROTATE",
-                        mouseTexStart: this.mouseEventToTexCoords(event),
-                        rotationStart: this.texRegion.getRotation(),
-                    };
             }
         })();
     }
@@ -277,7 +278,6 @@ class TexRegionController {
     }
 
     private onRotate(event: MouseEvent, mode: TransformModeRotate) {
-        // TODO: allow snapping while holding shift
         const mouseTexStart = vec2.clone(mode.mouseTexStart);
         const mouseTex = this.mouseEventToTexCoords(event);
 
@@ -286,7 +286,15 @@ class TexRegionController {
         vec2.sub(mouseTex, mouseTex, centerTex);
 
         const rotationDelta = vec2.signedAngle(mouseTexStart, mouseTex);
-        this.texRegion.setRotation(mode.rotationStart + rotationDelta);
+        let rotationNew = mode.rotationStart + rotationDelta;
+
+        if (event.ctrlKey) {
+            rotationNew /= Math.PI / 12;
+            rotationNew = Math.round(rotationNew);
+            rotationNew *= Math.PI / 12;
+        }
+
+        this.texRegion.setRotation(rotationNew);
     }
 
     private onShear(event: MouseEvent, mode: TransformModeShear) {

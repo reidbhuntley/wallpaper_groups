@@ -219,7 +219,7 @@ class TexRegionController {
                 break;
         }
 
-        this.updateCursorStyle(event);
+        this.canvas.style.cursor = this.getCursorStyle(event);
     }
 
     private onTranslate(event: MouseEvent, mode: TransformModeTranslate) {
@@ -320,8 +320,28 @@ class TexRegionController {
         this.texRegion.setShearFactor(deltaX / deltaY);
     }
 
-    private updateCursorStyle(event: MouseEvent) {
-        // TODO
+    private getCursorStyle(event: MouseEvent): string {
+        if (event.buttons & 1 && this.mode.kind !== null) {
+            return "grabbing";
+        }
+
+        const mouseExtent = this.mouseEventToExtentCoords(event);
+        const target = this.mouseExtentCoordsToTarget(mouseExtent);
+        switch (target) {
+            case null:
+            case "INSIDE":
+                return "auto";
+            case "LEFT":
+            case "BOTTOM":
+            case "RIGHT":
+            case "TOP":
+                return "grab";
+            case "LB":
+            case "RB":
+            case "RT":
+            case "LT":
+                return "pointer";
+        }
     }
 
     private render() {

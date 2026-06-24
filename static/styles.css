@@ -9,11 +9,21 @@ body {
     margin: 0;
 }
 
-#canvas-div {
+#output-canvas-div {
     flex: 1 1 0;
     position: relative;
 }
 
-#canvas {
+#output-canvas {
     position: absolute;
+    display: flex;
+}
+
+#tex-region-div {
+    position: absolute;
+    display: inline-block;
+    margin: 2rem;
+    padding: 1rem;
+    border: 6px solid;
+    border-color: grey;
 }

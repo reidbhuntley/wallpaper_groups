@@ -1,11 +1,27 @@
-main();
+import { TexRegionController } from "./tex_region_controller";
+
+const TEX_REGION_SIZE = 256.0;
 
 function main() {
-    const canvasDiv = document.getElementById("canvas-div") as HTMLElement;
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const texRegionCanvas = document.getElementById(
+        "tex-region-canvas",
+    ) as HTMLCanvasElement;
+    texRegionCanvas.width = TEX_REGION_SIZE;
+    texRegionCanvas.height = TEX_REGION_SIZE;
+
+    const texRegionController = new TexRegionController(texRegionCanvas);
+
+    const outputCanvasDiv = document.getElementById(
+        "output-canvas-div",
+    ) as HTMLElement;
+    const outputCanvas = document.getElementById(
+        "output-canvas",
+    ) as HTMLCanvasElement;
 
     window.onload = window.onresize = () => {
-        canvas.width = canvasDiv.offsetWidth;
-        canvas.height = canvasDiv.offsetHeight;
+        outputCanvas.width = outputCanvasDiv.offsetWidth;
+        outputCanvas.height = outputCanvasDiv.offsetHeight;
     };
 }
+
+main();

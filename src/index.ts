@@ -1,4 +1,5 @@
 import { Camera } from "./camera";
+import { CameraController } from "./camera_controller";
 import { Renderer } from "./renderer";
 import { TexRegionController } from "./tex_region_controller";
 import { WallpaperGroup, type WallpaperGroupKind } from "./wallpaper_group";
@@ -17,14 +18,16 @@ const texRegionController = new TexRegionController(texRegionCanvas);
 
 // Set up output canvas
 
-const LATTICE_WIDTH = 512.0;
-
 const outputCanvasDiv = document.getElementById(
     "output-canvas-div",
 ) as HTMLElement;
 const outputCanvas = document.getElementById(
     "output-canvas",
 ) as HTMLCanvasElement;
+
+// Set up camera
+
+const cameraController = new CameraController(outputCanvas);
 
 // Set up renderer
 
@@ -38,8 +41,7 @@ if (gl === null) {
     renderer = Renderer.init(
         gl,
         texRegionController.texRegion,
-        new Camera(outputCanvas),
-        LATTICE_WIDTH,
+        cameraController.camera,
     );
 
     texRegionController.onSetTextureBitmap = (bitmap) => {

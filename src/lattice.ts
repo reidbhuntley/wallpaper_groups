@@ -7,18 +7,47 @@ import { mat3Shear } from "./shear";
 const SQRT_3 = Math.sqrt(3);
 
 class Lattice {
-    width: number;
+    scale: number;
     group: WallpaperGroup;
     texRegion: TexRegion;
 
-    constructor(width: number, group: WallpaperGroup, texRegion: TexRegion) {
-        this.width = width;
+    constructor(scale: number, group: WallpaperGroup, texRegion: TexRegion) {
+        this.scale = scale;
         this.group = group;
         this.texRegion = texRegion;
     }
 
     getWidth(): number {
-        return this.width;
+        const texRegion = this.texRegion;
+        const wIn = texRegion.getWidth();
+        const hIn = texRegion.getHeight();
+        const rhombusWidth = (wIn: number, hIn: number) => {
+            return Math.sqrt(wIn * wIn * 0.25 + hIn * hIn * 0.25) * this.scale;
+        };
+
+        switch (this.group.getKind()) {
+            case "p1":
+            case "p2":
+            case "pm":
+            case "pg":
+            case "pgg":
+            case "p31m":
+            case "p6":
+                return wIn * this.scale;
+            case "pmm":
+            case "pmg":
+            case "p4":
+            case "p4m":
+            case "p4g":
+            case "p3":
+            case "p3m1":
+            case "p6m":
+                return wIn * 2 * this.scale;
+            case "cm":
+                return rhombusWidth(wIn, hIn * 2);
+            case "cmm":
+                return rhombusWidth(wIn * 2, hIn * 2);
+        }
     }
 
     getHeight(): number {
@@ -127,7 +156,7 @@ class Lattice {
     }
 
     getExtents(camera: Camera): [vec2, vec2] {
-        const elem = camera.canvas.getBoundingClientRect();
+        const elem = camera.viewport.getBoundingClientRect();
 
         const mat = this.getWorldToLatticeMat();
         mat3.multiply(mat, mat, camera.getViewportToWorldMat());

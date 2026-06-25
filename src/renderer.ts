@@ -48,7 +48,6 @@ class Renderer {
     texRegion: TexRegion;
     group: WallpaperGroup = new WallpaperGroup("p1");
     camera: Camera;
-    latticeWidth: number;
 
     private textureSize: {
         width: number;
@@ -68,7 +67,6 @@ class Renderer {
         gl: WebGLRenderingContext,
         texRegion: TexRegion,
         camera: Camera,
-        latticeWidth: number,
     ): Renderer | null {
         const prog = initShaderProgram(gl, vertexSrc, fragmentSrc);
         if (prog === null) {
@@ -102,20 +100,18 @@ class Renderer {
             },
         };
 
-        return new Renderer(gl, texRegion, camera, latticeWidth, programInfo);
+        return new Renderer(gl, texRegion, camera, programInfo);
     }
 
     private constructor(
         gl: WebGLRenderingContext,
         texRegion: TexRegion,
         camera: Camera,
-        latticeWidth: number,
         programInfo: ProgramInfo,
     ) {
         this.gl = gl;
         this.texRegion = texRegion;
         this.camera = camera;
-        this.latticeWidth = latticeWidth;
         this.programInfo = programInfo;
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -220,7 +216,7 @@ class Renderer {
 
         const group = this.group;
         const texRegion = this.texRegion;
-        const lattice = new Lattice(this.latticeWidth, group, texRegion);
+        const lattice = new Lattice(1.0, group, texRegion);
 
         const vertexData = lattice.getVertexData(
             ...lattice.getExtents(this.camera),

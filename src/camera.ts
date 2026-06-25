@@ -1,19 +1,19 @@
 import { mat3, vec2 } from "gl-matrix";
 
 class Camera {
-    canvas: HTMLCanvasElement;
+    viewport: HTMLElement;
     position: vec2 = vec2.fromValues(0.0, 0.0);
     rotation: number = 0.0;
-    scale: number = 1.0;
+    scale: number = 512.0;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+    constructor(viewport: HTMLElement) {
+        this.viewport = viewport;
     }
 
     getViewportToWorldMat(): mat3 {
         const scaleInv = 1.0 / this.scale;
 
-        const elem = this.canvas.getBoundingClientRect();
+        const elem = this.viewport.getBoundingClientRect();
         const centerAdjust = vec2.fromValues(
             -elem.width * 0.5,
             -elem.height * 0.5,
@@ -36,7 +36,7 @@ class Camera {
     }
 
     getWorldToClipMat(): mat3 {
-        const canvasRect = this.canvas.getBoundingClientRect();
+        const canvasRect = this.viewport.getBoundingClientRect();
         const clipScale = vec2.fromValues(
             2.0 / canvasRect.width,
             2.0 / canvasRect.height,

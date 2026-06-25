@@ -282,14 +282,20 @@ class TexRegionController {
         const aspectRatio = this.group.getPattern().fixedAspectRatio;
         if (aspectRatio === null) {
             // non-uniform scaling
-            const length = mode.lengthStart + lengthDelta;
+            let length = mode.lengthStart + lengthDelta;
             switch (mode.edge) {
                 case "LEFT":
                 case "RIGHT":
+                    if (event.ctrlKey) {
+                        length = this.texRegion.getHeight();
+                    }
                     this.texRegion.setWidth(length, mode.edge);
                     break;
                 case "BOTTOM":
                 case "TOP":
+                    if (event.ctrlKey) {
+                        length = this.texRegion.getWidth();
+                    }
                     this.texRegion.setHeight(length, mode.edge);
                     break;
             }

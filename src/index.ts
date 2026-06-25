@@ -1,3 +1,5 @@
+import { Camera } from "./camera";
+import { Renderer } from "./renderer";
 import { TexRegionController } from "./tex_region_controller";
 import { WallpaperGroup, type WallpaperGroupKind } from "./wallpaper_group";
 
@@ -27,6 +29,42 @@ const onGroupChanged = () => {
 onGroupChanged();
 groupSelect.addEventListener("change", onGroupChanged);
 
+// Set up output canvas
+
+const LATTICE_WIDTH = 512.0;
+
+const outputCanvasDiv = document.getElementById(
+    "output-canvas-div",
+) as HTMLElement;
+const outputCanvas = document.getElementById(
+    "output-canvas",
+) as HTMLCanvasElement;
+
+// Set up renderer
+
+const gl = outputCanvas.getContext("webgl");
+if (gl === null) {
+    alert(
+        "Unable to initialize WebGL. Your browser or machine may not support it.",
+    );
+} else {
+    Renderer.init(
+        gl,
+        texRegionController,
+        new Camera(outputCanvas),
+        LATTICE_WIDTH,
+    );
+}
+
+const resizeOutputCanvas = () => {
+    outputCanvas.width = outputCanvasDiv.offsetWidth;
+    outputCanvas.height = outputCanvasDiv.offsetHeight;
+    gl?.viewport(0, 0, outputCanvas.width, outputCanvas.height);
+};
+window.addEventListener("load", resizeOutputCanvas);
+window.addEventListener("resize", resizeOutputCanvas);
+resizeOutputCanvas();
+
 // Set up texture loading
 
 const defaultTexture = new Image();
@@ -52,19 +90,3 @@ fileInput.addEventListener("change", () => {
         texRegionController.setTextureFile(file);
     }
 });
-
-// Set up output lattice
-
-const outputCanvasDiv = document.getElementById(
-    "output-canvas-div",
-) as HTMLElement;
-const outputCanvas = document.getElementById(
-    "output-canvas",
-) as HTMLCanvasElement;
-
-const resizeOutputCanvas = () => {
-    outputCanvas.width = outputCanvasDiv.offsetWidth;
-    outputCanvas.height = outputCanvasDiv.offsetHeight;
-};
-window.addEventListener("load", resizeOutputCanvas);
-window.addEventListener("resize", resizeOutputCanvas);

@@ -53,6 +53,7 @@ const CORNER_RADIUS = 1.0 / 32.0;
 class TexRegionController {
     canvas: HTMLCanvasElement;
     texRegion: TexRegion = new TexRegion();
+    onSetTextureBitmap: ((texture: ImageBitmap) => void) | null = null;
     private group: WallpaperGroup = new WallpaperGroup("p1");
     private mode: TransformMode = { kind: null };
     private texture: ImageBitmap | null = null;
@@ -379,6 +380,9 @@ class TexRegionController {
 
     private setTextureBitmap(texture: ImageBitmap) {
         this.texture = texture;
+        if (this.onSetTextureBitmap !== null) {
+            this.onSetTextureBitmap(texture);
+        }
     }
 
     private getCursorStyle(event: MouseEvent): string {

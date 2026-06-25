@@ -7,13 +7,14 @@ import { mat3Shear } from "./shear";
 const SQRT_3 = Math.sqrt(3);
 
 class Lattice {
-    width: number = 256;
+    width: number;
     group: WallpaperGroup;
     texRegion: TexRegion;
 
-    constructor(group: WallpaperGroup, tex_region: TexRegion) {
+    constructor(width: number, group: WallpaperGroup, texRegion: TexRegion) {
+        this.width = width;
         this.group = group;
-        this.texRegion = tex_region;
+        this.texRegion = texRegion;
     }
 
     getWidth(): number {
@@ -24,6 +25,9 @@ class Lattice {
         const width = this.getWidth();
         const texRegion = this.texRegion;
         const ratio = () => texRegion.getHeight() / texRegion.getWidth();
+        const rhombusHeight = (ratio: number) => {
+            return (width * ratio * 2) / (ratio * ratio + 1);
+        };
 
         switch (this.group.getKind()) {
             case "p1":
@@ -46,14 +50,18 @@ class Lattice {
             case "p6m":
                 return width * SQRT_3 * 0.5;
             case "cm":
+                return rhombusHeight(ratio() * 2);
             case "cmm":
-                const double = 2 * ratio();
-                return (width * double * 2) / (double * double + 1);
+                return rhombusHeight(ratio());
         }
     }
 
     getShearFactor(): number {
         const texRegion = this.texRegion;
+        const ratio = () => texRegion.getHeight() / texRegion.getWidth();
+        const rhombusShear = (ratio: number) => {
+            return (1.0 / ratio - ratio) * 0.5;
+        };
 
         switch (this.group.getKind()) {
             case "p1":
@@ -66,23 +74,26 @@ class Lattice {
             case "p6m":
                 return SQRT_3 / 3.0;
             case "cm":
+                return rhombusShear(ratio() * 2);
             case "cmm":
-                const double =
-                    2 * (texRegion.getHeight() / texRegion.getWidth());
-                return (1.0 / double - double) * 0.5;
+                return rhombusShear(ratio());
             default:
                 return 0;
         }
     }
 
     getRotation(): number {
+        const texRegion = this.texRegion;
+        const ratio = () => texRegion.getHeight() / texRegion.getWidth();
+        const rhombusRotation = (ratio: number) => {
+            return -Math.atan(ratio);
+        };
+
         switch (this.group.getKind()) {
             case "cm":
+                return rhombusRotation(ratio() * 2);
             case "cmm":
-                const texRegion = this.texRegion;
-                const double =
-                    2 * (texRegion.getHeight() / texRegion.getWidth());
-                return -Math.atan(double);
+                return rhombusRotation(ratio());
             default:
                 return 0;
         }

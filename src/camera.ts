@@ -4,7 +4,7 @@ class Camera {
     canvas: HTMLCanvasElement;
     position: vec2 = vec2.fromValues(0.0, 0.0);
     rotation: number = 0.0;
-    scale: number = 0.0;
+    scale: number = 1.0;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;

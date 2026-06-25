@@ -26,6 +26,7 @@ body {
     padding: 1rem;
     border: 6px solid;
     border-color: grey;
+    background-color: white;
 }
 
 .tex-region-settings {

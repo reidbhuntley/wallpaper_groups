@@ -10,28 +10,27 @@ class Camera {
         this.viewport = viewport;
     }
 
-    getViewportToWorldMat(): mat3 {
-        const scaleInv = 1.0 / this.scale;
-
+    getViewportToViewMat(): mat3 {
         const elem = this.viewport.getBoundingClientRect();
         const centerAdjust = vec2.fromValues(
             -elem.width * 0.5,
             -elem.height * 0.5,
         );
 
-        // transformations will get applied in reverse order
         const out = mat3.create();
-
-        // view to world space
-        mat3.translate(out, out, this.position);
-        mat3.rotate(out, out, this.rotation);
-        mat3.scale(out, out, vec2.fromValues(scaleInv, scaleInv));
-
-        // viewport to view space
         mat3.scale(out, out, vec2.fromValues(1.0, -1.0));
         mat3.translate(out, out, centerAdjust);
         mat3.translate(out, out, vec2.fromValues(-elem.x, -elem.y));
+        return out;
+    }
 
+    getViewToWorldMat(): mat3 {
+        const scaleInv = 1.0 / this.scale;
+
+        const out = mat3.create();
+        mat3.translate(out, out, this.position);
+        mat3.rotate(out, out, this.rotation);
+        mat3.scale(out, out, vec2.fromValues(scaleInv, scaleInv));
         return out;
     }
 

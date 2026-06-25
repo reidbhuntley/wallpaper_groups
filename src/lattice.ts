@@ -159,7 +159,8 @@ class Lattice {
         const elem = camera.viewport.getBoundingClientRect();
 
         const mat = this.getWorldToLatticeMat();
-        mat3.multiply(mat, mat, camera.getViewportToWorldMat());
+        mat3.multiply(mat, mat, camera.getViewToWorldMat());
+        mat3.multiply(mat, mat, camera.getViewportToViewMat());
 
         const corners = [
             vec3.fromValues(elem.left, elem.top, 1.0),

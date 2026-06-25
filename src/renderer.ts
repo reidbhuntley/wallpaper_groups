@@ -2,6 +2,8 @@ import { mat3, vec2, vec3 } from "gl-matrix";
 import type { Camera } from "./camera";
 import type { TexRegionController } from "./tex_region_controller";
 import { Lattice } from "./lattice";
+import type { TexRegion } from "./tex_region";
+import { WallpaperGroup } from "./wallpaper_group";
 
 const vertexSrc = `
     attribute vec2 aVertexPosition;
@@ -43,7 +45,8 @@ type ProgramInfo = {
 
 class Renderer {
     gl: WebGLRenderingContext;
-    texController: TexRegionController;
+    texRegion: TexRegion;
+    group: WallpaperGroup = new WallpaperGroup("p1");
     camera: Camera;
     latticeWidth: number;
 
@@ -63,7 +66,7 @@ class Renderer {
 
     static init(
         gl: WebGLRenderingContext,
-        texController: TexRegionController,
+        texRegion: TexRegion,
         camera: Camera,
         latticeWidth: number,
     ): Renderer | null {
@@ -99,24 +102,18 @@ class Renderer {
             },
         };
 
-        return new Renderer(
-            gl,
-            texController,
-            camera,
-            latticeWidth,
-            programInfo,
-        );
+        return new Renderer(gl, texRegion, camera, latticeWidth, programInfo);
     }
 
     private constructor(
         gl: WebGLRenderingContext,
-        texController: TexRegionController,
+        texRegion: TexRegion,
         camera: Camera,
         latticeWidth: number,
         programInfo: ProgramInfo,
     ) {
         this.gl = gl;
-        this.texController = texController;
+        this.texRegion = texRegion;
         this.camera = camera;
         this.latticeWidth = latticeWidth;
         this.programInfo = programInfo;
@@ -131,16 +128,17 @@ class Renderer {
         };
 
         this.loadPlaceholderTexture();
-        texController.onSetTextureBitmap = (bitmap) => {
-            this.loadTexture(bitmap);
-        };
 
         requestAnimationFrame(() => {
             this.render();
         });
     }
 
-    private loadPlaceholderTexture() {
+    setGroup(group: WallpaperGroup) {
+        this.group = group;
+    }
+
+    loadPlaceholderTexture() {
         const gl = this.gl;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -165,7 +163,7 @@ class Renderer {
         );
     }
 
-    private loadTexture(bitmap: ImageBitmap) {
+    loadTexture(bitmap: ImageBitmap) {
         this.textureSize = {
             width: bitmap.width,
             height: bitmap.height,
@@ -220,8 +218,8 @@ class Renderer {
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const group = this.texController.getGroup();
-        const texRegion = this.texController.texRegion;
+        const group = this.group;
+        const texRegion = this.texRegion;
         const lattice = new Lattice(this.latticeWidth, group, texRegion);
 
         const vertexData = lattice.getVertexData(

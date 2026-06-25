@@ -15,20 +15,6 @@ texRegionCanvas.height = TEX_REGION_SIZE;
 
 const texRegionController = new TexRegionController(texRegionCanvas);
 
-// Set up group selection
-
-const groupSelect = document.getElementById(
-    "group-select",
-) as HTMLSelectElement;
-
-const onGroupChanged = () => {
-    const groupKind = groupSelect.value as WallpaperGroupKind;
-    texRegionController.setGroup(new WallpaperGroup(groupKind));
-};
-
-onGroupChanged();
-groupSelect.addEventListener("change", onGroupChanged);
-
 // Set up output canvas
 
 const LATTICE_WIDTH = 512.0;
@@ -43,27 +29,51 @@ const outputCanvas = document.getElementById(
 // Set up renderer
 
 const gl = outputCanvas.getContext("webgl");
+let renderer: Renderer | null = null;
 if (gl === null) {
     alert(
         "Unable to initialize WebGL. Your browser or machine may not support it.",
     );
 } else {
-    Renderer.init(
+    renderer = Renderer.init(
         gl,
-        texRegionController,
+        texRegionController.texRegion,
         new Camera(outputCanvas),
         LATTICE_WIDTH,
     );
+
+    texRegionController.onSetTextureBitmap = (bitmap) => {
+        renderer?.loadTexture(bitmap);
+    };
 }
+
+// Resize output canvas based on its container's size
 
 const resizeOutputCanvas = () => {
     outputCanvas.width = outputCanvasDiv.offsetWidth;
     outputCanvas.height = outputCanvasDiv.offsetHeight;
     gl?.viewport(0, 0, outputCanvas.width, outputCanvas.height);
 };
+
+resizeOutputCanvas();
 window.addEventListener("load", resizeOutputCanvas);
 window.addEventListener("resize", resizeOutputCanvas);
-resizeOutputCanvas();
+
+// Set up group selection
+
+const groupSelect = document.getElementById(
+    "group-select",
+) as HTMLSelectElement;
+
+const onGroupChanged = () => {
+    const groupKind = groupSelect.value as WallpaperGroupKind;
+    const group = new WallpaperGroup(groupKind);
+    texRegionController.setGroup(group);
+    renderer?.setGroup(group);
+};
+
+onGroupChanged();
+groupSelect.addEventListener("change", onGroupChanged);
 
 // Set up texture loading
 

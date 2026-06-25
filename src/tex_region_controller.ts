@@ -181,6 +181,8 @@ class TexRegionController {
     }
 
     private onMouseDown(event: MouseEvent) {
+        event.preventDefault();
+
         const mouseExtent = this.mouseEventToExtentCoords(event);
         const target = this.mouseExtentCoordsToTarget(mouseExtent);
 

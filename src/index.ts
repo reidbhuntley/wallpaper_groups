@@ -1,20 +1,7 @@
-import { Camera } from "./camera";
 import { CameraController } from "./camera_controller";
 import { Renderer } from "./renderer";
 import { TexRegionController } from "./tex_region_controller";
 import { WallpaperGroup, type WallpaperGroupKind } from "./wallpaper_group";
-
-// Set up tex region controller
-
-const TEX_REGION_SIZE = 300.0;
-
-const texRegionCanvas = document.getElementById(
-    "tex-region-canvas",
-) as HTMLCanvasElement;
-texRegionCanvas.width = TEX_REGION_SIZE;
-texRegionCanvas.height = TEX_REGION_SIZE;
-
-const texRegionController = new TexRegionController(texRegionCanvas);
 
 // Set up output canvas
 
@@ -28,6 +15,18 @@ const outputCanvas = document.getElementById(
 // Set up camera
 
 const cameraController = new CameraController(outputCanvas);
+
+// Set up tex region controller
+
+const TEX_REGION_WIDTH_RATIO = 1.0 / 3.0;
+const TEX_REGION_SIZE_MIN = 256.0;
+const TEX_REGION_SIZE_MAX = 512.0;
+
+const texRegionCanvas = document.getElementById(
+    "tex-region-canvas",
+) as HTMLCanvasElement;
+
+const texRegionController = new TexRegionController(texRegionCanvas);
 
 // Set up renderer
 
@@ -49,9 +48,19 @@ if (gl === null) {
     };
 }
 
-// Resize output canvas based on its container's size
+// Resize canvases based on the container's size
 
 const resizeOutputCanvas = () => {
+    const texRegionSize = Math.max(
+        TEX_REGION_SIZE_MIN,
+        Math.min(
+            TEX_REGION_SIZE_MAX,
+            TEX_REGION_WIDTH_RATIO * outputCanvasDiv.offsetWidth,
+        ),
+    );
+    texRegionCanvas.width = texRegionSize;
+    texRegionCanvas.height = texRegionSize;
+
     outputCanvas.width = outputCanvasDiv.offsetWidth;
     outputCanvas.height = outputCanvasDiv.offsetHeight;
     gl?.viewport(0, 0, outputCanvas.width, outputCanvas.height);

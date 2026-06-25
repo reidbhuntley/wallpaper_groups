@@ -41,6 +41,7 @@ class CameraController {
     }
 
     private onMouseDown(event: MouseEvent) {
+        event.preventDefault();
         // TODO
     }
 

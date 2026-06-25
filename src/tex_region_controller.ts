@@ -361,28 +361,11 @@ class TexRegionController {
 
     setTextureFile(file: ImageBitmapSource) {
         createImageBitmap(file).then((bitmap) => {
-            const width = bitmap.width;
-            const height = bitmap.height;
-            if (width === height) {
-                this.setTextureBitmap(bitmap);
-            } else {
-                const size = Math.min(width, height);
-                const x = (width - size) * 0.5;
-                const y = (height - size) * 0.5;
-                createImageBitmap(bitmap, x, y, size, size).then(
-                    (croppedBitmap) => {
-                        this.setTextureBitmap(croppedBitmap);
-                    },
-                );
+            this.texture = bitmap;
+            if (this.onSetTextureBitmap !== null) {
+                this.onSetTextureBitmap(bitmap);
             }
         });
-    }
-
-    private setTextureBitmap(texture: ImageBitmap) {
-        this.texture = texture;
-        if (this.onSetTextureBitmap !== null) {
-            this.onSetTextureBitmap(texture);
-        }
     }
 
     private getCursorStyle(event: MouseEvent): string {
@@ -459,7 +442,17 @@ class TexRegionController {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (this.texture) {
-            ctx.drawImage(this.texture, 0, 0, canvas.width, canvas.height);
+            // crop texture to square
+            const texSize = Math.min(this.texture.width, this.texture.height);
+            const texWidth = (this.texture.width / texSize) * canvas.width;
+            const texHeight = (this.texture.height / texSize) * canvas.height;
+            ctx.drawImage(
+                this.texture,
+                (canvas.width - texWidth) * 0.5,
+                (canvas.height - texHeight) * 0.5,
+                texWidth,
+                texHeight,
+            );
         }
 
         ctx.lineWidth = 2.0;

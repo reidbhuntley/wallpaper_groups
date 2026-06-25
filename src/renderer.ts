@@ -14,8 +14,7 @@ const vertexSrc = `
 
     void main(void) {
         gl_Position = vec4((uLatticeMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-        vec3 texTransformed = uTexCoordMatrix * vec3(aTextureCoord, 1.0);
-        vTextureCoord = vec2(texTransformed.x, 1.0 - texTransformed.y);
+        vTextureCoord = (uTexCoordMatrix * vec3(aTextureCoord, 1.0)).xy;
     }
 `;
 
@@ -48,12 +47,19 @@ class Renderer {
     camera: Camera;
     latticeWidth: number;
 
-    texture: WebGLTexture;
-    buffers: {
+    private textureSize: {
+        width: number;
+        height: number;
+    } = {
+        width: 0,
+        height: 0,
+    };
+    private texture: WebGLTexture;
+    private buffers: {
         vertexPosition: WebGLBuffer;
         textureCoord: WebGLBuffer;
     };
-    programInfo: ProgramInfo;
+    private programInfo: ProgramInfo;
 
     static init(
         gl: WebGLRenderingContext,
@@ -160,6 +166,11 @@ class Renderer {
     }
 
     private loadTexture(bitmap: ImageBitmap) {
+        this.textureSize = {
+            width: bitmap.width,
+            height: bitmap.height,
+        };
+
         const gl = this.gl;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -181,6 +192,29 @@ class Renderer {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     }
 
+    getTexCoordToRectTexCoordMat(): mat3 {
+        const texSize = Math.min(
+            this.textureSize.width,
+            this.textureSize.height,
+        );
+        const wScale = texSize / this.textureSize.width;
+        const hScale = texSize / this.textureSize.height;
+
+        const out = mat3.create();
+        // flip y-coord to match expected WebGL coords
+        mat3.translate(out, out, vec2.fromValues(0.0, 1.0));
+        mat3.scale(out, out, vec2.fromValues(1.0, -1.0));
+
+        // crop to square
+        mat3.translate(
+            out,
+            out,
+            vec2.fromValues((1.0 - wScale) * 0.5, (1.0 - hScale) * 0.5),
+        );
+        mat3.scale(out, out, vec2.fromValues(wScale, hScale));
+        return out;
+    }
+
     private render() {
         const gl = this.gl;
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -197,7 +231,12 @@ class Renderer {
         const latticeMat = this.camera.getWorldToClipMat();
         mat3.multiply(latticeMat, latticeMat, lattice.getLatticeToWorldMat());
 
-        const texCoordMat = texRegion.getExtentToTexCoordMat();
+        const texCoordMat = this.getTexCoordToRectTexCoordMat();
+        mat3.multiply(
+            texCoordMat,
+            texCoordMat,
+            texRegion.getExtentToTexCoordMat(),
+        );
         mat3.multiply(
             texCoordMat,
             texCoordMat,

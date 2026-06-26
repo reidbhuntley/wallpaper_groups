@@ -1,4 +1,5 @@
 import { CameraController } from "./camera_controller";
+import { GroupSelectController } from "./group_select_controller";
 import { Renderer } from "./renderer";
 import { TexRegionController } from "./tex_region_controller";
 import { WallpaperGroup, type WallpaperGroupKind } from "./wallpaper_group";
@@ -19,6 +20,7 @@ const cameraController = new CameraController(outputCanvas);
 // Set up tex region controller
 
 const TEX_REGION_WIDTH_RATIO = 1.0 / 3.0;
+const TEX_REGION_HEIGHT_RATIO = 0.6;
 const TEX_REGION_SIZE_MIN = 256.0;
 const TEX_REGION_SIZE_MAX = 512.0;
 
@@ -56,6 +58,7 @@ const resizeOutputCanvas = () => {
         Math.min(
             TEX_REGION_SIZE_MAX,
             TEX_REGION_WIDTH_RATIO * outputCanvasDiv.offsetWidth,
+            TEX_REGION_HEIGHT_RATIO * outputCanvasDiv.offsetHeight,
         ),
     );
     texRegionCanvas.width = texRegionSize;
@@ -75,16 +78,28 @@ window.addEventListener("resize", resizeOutputCanvas);
 const groupSelect = document.getElementById(
     "group-select",
 ) as HTMLSelectElement;
+const groupSelectPrev = document.getElementById(
+    "group-select-prev",
+) as HTMLElement;
+const groupSelectNext = document.getElementById(
+    "group-select-next",
+) as HTMLElement;
 
-const onGroupChanged = () => {
-    const groupKind = groupSelect.value as WallpaperGroupKind;
+const groupSelectController = new GroupSelectController(
+    groupSelect,
+    groupSelectPrev,
+    groupSelectNext,
+);
+groupSelectController.onChange = () => {};
+
+const onGroupChanged = (groupKind: WallpaperGroupKind) => {
     const group = new WallpaperGroup(groupKind);
     texRegionController.setGroup(group);
     renderer?.setGroup(group);
 };
 
-onGroupChanged();
-groupSelect.addEventListener("change", onGroupChanged);
+onGroupChanged("p1");
+groupSelectController.onChange = onGroupChanged;
 
 // Set up texture loading
 

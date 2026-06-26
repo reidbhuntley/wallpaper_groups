@@ -9,6 +9,10 @@ body {
     margin: 0;
 }
 
+.title {
+    margin: 1rem;
+}
+
 .output-canvas-div {
     flex: 1 1 0;
     position: relative;

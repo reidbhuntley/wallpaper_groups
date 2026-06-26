@@ -239,6 +239,10 @@ class TexRegionController {
     }
 
     private onMouseMove(event: MouseEvent) {
+        if (!(event.buttons & 1)) {
+            this.mode = { kind: null };
+        }
+
         switch (this.mode.kind) {
             case null:
                 break;

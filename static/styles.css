@@ -81,7 +81,7 @@ body {
     display: none;
 }
 
-.save-output-collapsible {
+#save-output-collapsible {
     max-width: 0;
     overflow: hidden;
     transition: max-width 0.3s ease-out;
@@ -91,7 +91,7 @@ body {
     column-gap: 0.6rem;
 }
 
-.save-output-collapsible.open {
+#save-output-collapsible.open {
     max-width: 16rem;
 }
 

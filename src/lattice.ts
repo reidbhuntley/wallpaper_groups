@@ -155,18 +155,16 @@ class Lattice {
         return out;
     }
 
-    getExtents(camera: Camera): [vec2, vec2] {
-        const elem = camera.viewport.getBoundingClientRect();
-
+    getExtents(camera: Camera, viewport: DOMRect): [vec2, vec2] {
         const mat = this.getWorldToLatticeMat();
         mat3.multiply(mat, mat, camera.getViewToWorldMat());
-        mat3.multiply(mat, mat, camera.getViewportToViewMat());
+        mat3.multiply(mat, mat, camera.getViewportToViewMat(viewport));
 
         const corners = [
-            vec3.fromValues(elem.left, elem.top, 1.0),
-            vec3.fromValues(elem.right, elem.top, 1.0),
-            vec3.fromValues(elem.left, elem.bottom, 1.0),
-            vec3.fromValues(elem.right, elem.bottom, 1.0),
+            vec3.fromValues(viewport.left, viewport.top, 1.0),
+            vec3.fromValues(viewport.right, viewport.top, 1.0),
+            vec3.fromValues(viewport.left, viewport.bottom, 1.0),
+            vec3.fromValues(viewport.right, viewport.bottom, 1.0),
         ];
 
         for (const corner of corners) {

@@ -124,9 +124,18 @@ class Renderer {
         };
 
         this.loadPlaceholderTexture();
+    }
 
+    startRenderLoop() {
         requestAnimationFrame(() => {
-            this.render();
+            this.renderLoop();
+        });
+    }
+
+    private renderLoop() {
+        this.renderOnce();
+        requestAnimationFrame(() => {
+            this.renderLoop();
         });
     }
 
@@ -209,7 +218,7 @@ class Renderer {
         return out;
     }
 
-    private render() {
+    renderOnce() {
         const gl = this.gl;
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -219,10 +228,13 @@ class Renderer {
         const lattice = new Lattice(1.0, group, texRegion);
 
         const vertexData = lattice.getVertexData(
-            ...lattice.getExtents(this.camera),
+            ...lattice.getExtents(this.camera, this.getViewportRect()),
         );
 
-        const latticeMat = this.camera.getWorldToClipMat();
+        const latticeMat = this.camera.getWorldToClipMat(
+            this.gl.canvas.width,
+            this.gl.canvas.height,
+        );
         mat3.multiply(latticeMat, latticeMat, lattice.getLatticeToWorldMat());
 
         const texCoordMat = this.getTexCoordToRectTexCoordMat();
@@ -259,10 +271,6 @@ class Renderer {
 
         const vertexCount = vertexData.posBuf.length / 2;
         gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
-
-        requestAnimationFrame(() => {
-            this.render();
-        });
     }
 
     private setPositionAttribute(array: Float32Array) {
@@ -295,6 +303,15 @@ class Renderer {
         const offset = 0;
         gl.vertexAttribPointer(attribLoc, num, type, normalize, stride, offset);
         gl.enableVertexAttribArray(attribLoc);
+    }
+
+    getViewportRect(): DOMRect {
+        const canvas = this.gl.canvas;
+        if (canvas instanceof HTMLCanvasElement) {
+            return canvas.getBoundingClientRect();
+        } else {
+            return new DOMRect(0, 0, canvas.width, canvas.height);
+        }
     }
 }
 

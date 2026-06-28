@@ -24,13 +24,15 @@ type TransformMode =
 
 class CameraController {
     camera: Camera;
+    viewport: HTMLElement;
     private mode: TransformMode = { kind: null };
 
     private zoomLevel: number = 0;
     private cameraScaleStart: number;
 
     constructor(viewport: HTMLElement) {
-        this.camera = new Camera(viewport);
+        this.viewport = viewport;
+        this.camera = new Camera();
         this.cameraScaleStart = this.camera.scale;
 
         viewport.addEventListener("wheel", (e) => this.onMouseWheel(e), {
@@ -42,7 +44,9 @@ class CameraController {
     }
 
     mouseEventToViewCoords(event: MouseEvent): vec2 {
-        const mat = this.camera.getViewportToViewMat();
+        const mat = this.camera.getViewportToViewMat(
+            this.viewport.getBoundingClientRect(),
+        );
         const out = vec3.fromValues(event.clientX, event.clientY, 1.0);
         vec3.transformMat3(out, out, mat);
         return vec2.fromValues(out[0], out[1]);
@@ -84,7 +88,7 @@ class CameraController {
                 break;
         }
 
-        this.camera.viewport.style.cursor = this.getCursorStyle(event);
+        this.viewport.style.cursor = this.getCursorStyle(event);
     }
 
     private onMouseWheel(event: WheelEvent) {
@@ -102,7 +106,9 @@ class CameraController {
         mat3.multiply(
             viewportToWorld,
             viewportToWorld,
-            this.camera.getViewportToViewMat(),
+            this.camera.getViewportToViewMat(
+                this.viewport.getBoundingClientRect(),
+            ),
         );
 
         const delta = vec3.fromValues(event.movementX, event.movementY, 0.0);

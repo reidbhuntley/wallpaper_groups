@@ -486,7 +486,7 @@ class TexRegionController {
         ctx.lineWidth = 1.0;
         ctx.strokeStyle = "lightgrey";
         ctx.setLineDash([]);
-        const rad = CORNER_RADIUS * 0.6 * this.getScaleFactor();
+        const rad = CORNER_RADIUS * 0.4 * this.getScaleFactor();
         for (const corner of corners) {
             ctx.beginPath();
             ctx.ellipse(corner[0], corner[1], rad, rad, 0, 0, 2 * Math.PI);

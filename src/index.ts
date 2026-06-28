@@ -32,7 +32,9 @@ const texRegionController = new TexRegionController(texRegionCanvas);
 
 // Set up renderer
 
-const gl = outputCanvas.getContext("webgl");
+const gl = outputCanvas.getContext("webgl", {
+    antialias: true,
+});
 let renderer: Renderer | null = null;
 if (gl === null) {
     alert(

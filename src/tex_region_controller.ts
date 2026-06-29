@@ -197,15 +197,12 @@ class TexRegionController {
         const eventType = event.parent.type;
         const isStartEvent = ["mousedown", "touchstart"].includes(eventType);
 
-        const drag = event.drags[0];
-        let mouseExtent: vec2 | null = null;
-        let target: DragTarget = null;
-
-        if (drag === undefined || event.drags.length !== 1) {
+        if (event.drags.length !== 1) {
             this.mode = { kind: null };
         } else if (isStartEvent) {
-            mouseExtent = this.dragToExtentCoords(drag);
-            target = this.dragExtentCoordsToTarget(mouseExtent);
+            const drag = event.drags[0] as Drag.Pos;
+            const dragExtent = this.dragToExtentCoords(drag);
+            const target = this.dragExtentCoordsToTarget(dragExtent);
 
             this.mode = (() => {
                 switch (target) {
@@ -221,7 +218,7 @@ class TexRegionController {
                     case "RIGHT":
                         return {
                             kind: "GROW",
-                            mouseExtentStart: mouseExtent,
+                            mouseExtentStart: dragExtent,
                             lengthStart: this.texRegion.getWidth(),
                             edge: target,
                         };
@@ -229,7 +226,7 @@ class TexRegionController {
                     case "TOP":
                         return {
                             kind: "GROW",
-                            mouseExtentStart: mouseExtent,
+                            mouseExtentStart: dragExtent,
                             lengthStart: this.texRegion.getHeight(),
                             edge: target,
                         };
@@ -276,7 +273,16 @@ class TexRegionController {
             event.parent.preventDefault();
         }
 
-        this.canvas.style.cursor = this.getCursorStyle(target);
+        let mouseTarget: DragTarget = null;
+        if (event.parent instanceof MouseEvent) {
+            const mouseExtent = this.dragToExtentCoords({
+                touchId: null,
+                clientX: event.parent.clientX,
+                clientY: event.parent.clientY,
+            });
+            mouseTarget = this.dragExtentCoordsToTarget(mouseExtent);
+        }
+        this.canvas.style.cursor = this.getCursorStyle(mouseTarget);
     }
 
     private onTranslate(event: Drag.Event, mode: TransformModeTranslate) {

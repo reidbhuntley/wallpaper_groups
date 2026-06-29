@@ -6,6 +6,10 @@ const ZOOM_FACTOR = 7.0 / 6.0;
 const ZOOM_LEVEL_MIN = -12;
 const ZOOM_LEVEL_MAX = 12;
 
+const TWO_PI = Math.PI * 2;
+
+const ROTATION_SNAP_MAX = TWO_PI / 80.0;
+
 type TransformModeNone = { kind: null };
 
 type TransformModeTranslate = {
@@ -18,10 +22,18 @@ type TransformModeRotate = {
     rotationStart: number;
 };
 
+type TransformModePinch = {
+    kind: "PINCH";
+    dragsStart: [Drag.Pos, Drag.Pos];
+    rotationStart: number;
+    scaleStart: number;
+};
+
 type TransformMode =
     | TransformModeNone
     | TransformModeTranslate
-    | TransformModeRotate;
+    | TransformModeRotate
+    | TransformModePinch;
 
 class CameraController {
     camera: Camera;
@@ -62,24 +74,43 @@ class CameraController {
     }
 
     private onDragEvent(event: Drag.Event) {
-        if (event.drags.length === 0) {
-            this.mode = { kind: null };
-        } else if (
-            ["mousedown", "touchstart"].includes(event.parent.type) &&
-            event.drags.length === 1
-        ) {
-            const drag = event.drags[0] as Drag.Pos;
+        const eventType = event.parent.type;
+        const isStartEvent = ["mousedown", "touchstart"].includes(eventType);
+        const isEndEvent = ["mouseup", "touchend"].includes(eventType);
 
-            if (event.parent.shiftKey) {
-                this.mode = {
-                    kind: "ROTATE",
-                    mouseViewStart: this.dragToViewCoords(drag),
-                    rotationStart: this.camera.rotation,
-                };
-            } else {
-                this.mode = {
-                    kind: "TRANSLATE",
-                };
+        if (
+            (isStartEvent || isEndEvent) &&
+            event.drags.length !== this.dragEventPrev?.drags?.length
+        ) {
+            switch (event.drags.length) {
+                case 1:
+                    const drag = event.drags[0] as Drag.Pos;
+
+                    if (event.parent.shiftKey) {
+                        this.mode = {
+                            kind: "ROTATE",
+                            mouseViewStart: this.dragToViewCoords(drag),
+                            rotationStart: this.camera.rotation,
+                        };
+                    } else {
+                        this.mode = {
+                            kind: "TRANSLATE",
+                        };
+                    }
+                    break;
+                case 2:
+                    const drag0 = event.drags[0] as Drag.Pos;
+                    const drag1 = event.drags[1] as Drag.Pos;
+                    this.mode = {
+                        kind: "PINCH",
+                        dragsStart: [drag0, drag1],
+                        rotationStart: this.camera.rotation,
+                        scaleStart: this.camera.scale,
+                    };
+                    break;
+                default:
+                    this.mode = { kind: null };
+                    break;
             }
         }
 
@@ -92,9 +123,12 @@ class CameraController {
             case "ROTATE":
                 this.onRotate(event, this.mode);
                 break;
+            case "PINCH":
+                this.onPinch(event, this.mode);
+                break;
         }
 
-        if (this.mode.kind !== null) {
+        if (isStartEvent || this.mode.kind !== null) {
             event.parent.preventDefault();
         }
 
@@ -146,12 +180,45 @@ class CameraController {
         let rotationNew = mode.rotationStart - rotationDelta;
 
         if (event.parent.ctrlKey) {
-            rotationNew /= Math.PI / 12;
-            rotationNew = Math.round(rotationNew);
-            rotationNew *= Math.PI / 12;
+            rotationNew = snapAngle(rotationNew);
         }
 
-        this.camera.rotation = rotationNew;
+        this.setRotation(rotationNew);
+    }
+
+    private onPinch(event: Drag.Event, mode: TransformModePinch) {
+        const dragsCur = event.drags as [Drag.Pos, Drag.Pos];
+        const dragsStart: [Drag.Pos, Drag.Pos] =
+            dragsCur[0].touchId === mode.dragsStart[0].touchId
+                ? mode.dragsStart
+                : [mode.dragsStart[1], mode.dragsStart[0]];
+
+        const vecCur = vec2.fromValues(
+            dragsCur[1].clientX - dragsCur[0].clientX,
+            dragsCur[1].clientY - dragsCur[0].clientY,
+        );
+        const vecStart = vec2.fromValues(
+            dragsStart[1].clientX - dragsStart[0].clientX,
+            dragsStart[1].clientY - dragsStart[0].clientY,
+        );
+
+        const rotationDelta = vec2.signedAngle(vecStart, vecCur);
+        const rotationNew = mode.rotationStart + rotationDelta;
+        this.setRotation(rotationNew);
+
+        const camRotNew = this.camera.rotation;
+        if (
+            Math.min(Math.abs(camRotNew), Math.abs(TWO_PI - camRotNew)) <
+            ROTATION_SNAP_MAX
+        ) {
+            this.setRotation(0);
+        }
+
+        const scaleMin = this.getZoomScale(ZOOM_LEVEL_MIN);
+        const scaleMax = this.getZoomScale(ZOOM_LEVEL_MAX);
+        const scaleNew =
+            mode.scaleStart * (vec2.len(vecCur) / vec2.len(vecStart));
+        this.camera.scale = Math.max(scaleMin, Math.min(scaleMax, scaleNew));
     }
 
     private onZoom(event: WheelEvent) {
@@ -161,8 +228,21 @@ class CameraController {
             ZOOM_LEVEL_MAX,
         );
 
-        this.camera.scale =
-            this.cameraScaleStart * Math.pow(ZOOM_FACTOR, this.zoomLevel);
+        this.camera.scale = this.getZoomScale(this.zoomLevel);
+    }
+
+    private getZoomScale(level: number): number {
+        return this.cameraScaleStart * Math.pow(ZOOM_FACTOR, level);
+    }
+
+    private setRotation(rotation: number) {
+        while (rotation < 0) {
+            rotation += TWO_PI;
+        }
+        while (rotation >= TWO_PI) {
+            rotation -= TWO_PI;
+        }
+        this.camera.rotation = rotation;
     }
 
     private getCursorStyle(): string {
@@ -172,6 +252,11 @@ class CameraController {
 
         return "auto";
     }
+}
+
+const ANGLE_SNAP_INTERVAL = Math.PI / 12;
+function snapAngle(angle: number): number {
+    return Math.round(angle / ANGLE_SNAP_INTERVAL) * ANGLE_SNAP_INTERVAL;
 }
 
 export { CameraController };

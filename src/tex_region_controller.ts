@@ -194,13 +194,16 @@ class TexRegionController {
     }
 
     private onDragEvent(event: Drag.Event) {
+        const eventType = event.parent.type;
+        const isStartEvent = ["mousedown", "touchstart"].includes(eventType);
+
         const drag = event.drags[0];
         let mouseExtent: vec2 | null = null;
         let target: DragTarget = null;
 
         if (drag === undefined || event.drags.length !== 1) {
             this.mode = { kind: null };
-        } else if (["mousedown", "touchstart"].includes(event.parent.type)) {
+        } else if (isStartEvent) {
             mouseExtent = this.dragToExtentCoords(drag);
             target = this.dragExtentCoordsToTarget(mouseExtent);
 
@@ -269,7 +272,7 @@ class TexRegionController {
                 break;
         }
 
-        if (this.mode.kind !== null) {
+        if (isStartEvent || this.mode.kind !== null) {
             event.parent.preventDefault();
         }
 

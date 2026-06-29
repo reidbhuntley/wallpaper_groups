@@ -56,6 +56,12 @@ body {
     pointer-events: auto;
 }
 
+@media screen and ((max-width: 600px) or (max-height: 500px)) {
+    .tex-region-div {
+        padding: 0.7rem;
+    }
+}
+
 .tex-region-settings {
     align-self: stretch;
     display: flex;
@@ -73,6 +79,7 @@ body {
 .group-select-container {
     display: flex;
     align-items: center;
+    margin-right: 0.7rem;
 }
 
 .group-select-arrow {

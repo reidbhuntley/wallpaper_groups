@@ -19,9 +19,9 @@ const cameraController = new CameraController(outputCanvas);
 
 // Set up tex region controller
 
-const TEX_REGION_WIDTH_RATIO = 1.0 / 3.0;
+const TEX_REGION_WIDTH_RATIO = 0.5;
 const TEX_REGION_HEIGHT_RATIO = 0.6;
-const TEX_REGION_SIZE_MIN = 256.0;
+const TEX_REGION_SIZE_MIN = 128.0;
 const TEX_REGION_SIZE_MAX = 512.0;
 
 const texRegionCanvas = document.getElementById(

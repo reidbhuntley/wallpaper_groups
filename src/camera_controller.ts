@@ -1,5 +1,6 @@
 import { mat3, vec2, vec3 } from "gl-matrix";
 import { Camera } from "./camera";
+import { Drag } from "./drag";
 
 const ZOOM_FACTOR = 7.0 / 6.0;
 const ZOOM_LEVEL_MIN = -12;
@@ -26,6 +27,7 @@ class CameraController {
     camera: Camera;
     viewport: HTMLElement;
     private mode: TransformMode = { kind: null };
+    private dragEventPrev: Drag.Event | null = null;
 
     private zoomLevel: number = 0;
     private cameraScaleStart: number;
@@ -38,43 +40,47 @@ class CameraController {
         viewport.addEventListener("wheel", (e) => this.onMouseWheel(e), {
             passive: false,
         });
-        viewport.addEventListener("mousedown", (e) => this.onMouseDown(e));
-        window.addEventListener("mousemove", (e) => this.onMouseMove(e));
-        window.addEventListener("mouseup", (e) => this.onMouseUp(e));
+
+        const onEvent = (e: MouseEvent | TouchEvent) => {
+            this.onDragEvent(Drag.createEvent(e));
+        };
+        viewport.addEventListener("mousedown", onEvent);
+        window.addEventListener("mousemove", onEvent);
+        window.addEventListener("mouseup", onEvent);
+        viewport.addEventListener("touchstart", onEvent);
+        window.addEventListener("touchmove", onEvent, { passive: false });
+        window.addEventListener("touchend", onEvent);
     }
 
-    mouseEventToViewCoords(event: MouseEvent): vec2 {
+    dragToViewCoords(drag: Drag.Pos): vec2 {
         const mat = this.camera.getViewportToViewMat(
             this.viewport.getBoundingClientRect(),
         );
-        const out = vec3.fromValues(event.clientX, event.clientY, 1.0);
+        const out = vec3.fromValues(drag.clientX, drag.clientY, 1.0);
         vec3.transformMat3(out, out, mat);
         return vec2.fromValues(out[0], out[1]);
     }
 
-    private onMouseDown(event: MouseEvent) {
-        event.preventDefault();
-
-        if (event.shiftKey) {
-            this.mode = {
-                kind: "ROTATE",
-                mouseViewStart: this.mouseEventToViewCoords(event),
-                rotationStart: this.camera.rotation,
-            };
-        } else {
-            this.mode = {
-                kind: "TRANSLATE",
-            };
-        }
-    }
-
-    private onMouseUp(event: MouseEvent) {
-        this.mode = { kind: null };
-    }
-
-    private onMouseMove(event: MouseEvent) {
-        if (!(event.buttons & 1)) {
+    private onDragEvent(event: Drag.Event) {
+        if (event.drags.length === 0) {
             this.mode = { kind: null };
+        } else if (
+            ["mousedown", "touchstart"].includes(event.parent.type) &&
+            event.drags.length === 1
+        ) {
+            const drag = event.drags[0] as Drag.Pos;
+
+            if (event.parent.shiftKey) {
+                this.mode = {
+                    kind: "ROTATE",
+                    mouseViewStart: this.dragToViewCoords(drag),
+                    rotationStart: this.camera.rotation,
+                };
+            } else {
+                this.mode = {
+                    kind: "TRANSLATE",
+                };
+            }
         }
 
         switch (this.mode.kind) {
@@ -88,7 +94,13 @@ class CameraController {
                 break;
         }
 
-        this.viewport.style.cursor = this.getCursorStyle(event);
+        if (this.mode.kind !== null) {
+            event.parent.preventDefault();
+        }
+
+        this.viewport.style.cursor = this.getCursorStyle();
+
+        this.dragEventPrev = event;
     }
 
     private onMouseWheel(event: WheelEvent) {
@@ -96,8 +108,8 @@ class CameraController {
         this.onZoom(event);
     }
 
-    private onTranslate(event: MouseEvent, _mode: TransformModeTranslate) {
-        if (event.ctrlKey) {
+    private onTranslate(event: Drag.Event, _mode: TransformModeTranslate) {
+        if (event.parent.ctrlKey) {
             this.camera.position = vec2.fromValues(0.0, 0.0);
             return;
         }
@@ -111,20 +123,29 @@ class CameraController {
             ),
         );
 
-        const delta = vec3.fromValues(event.movementX, event.movementY, 0.0);
+        const movement = Drag.getChanges(
+            event,
+            this.dragEventPrev,
+        )[0] as Drag.Movement;
+
+        const delta = vec3.fromValues(
+            movement.movementX,
+            movement.movementY,
+            0.0,
+        );
         vec3.transformMat3(delta, delta, viewportToWorld);
 
         vec2.sub(this.camera.position, this.camera.position, delta);
     }
 
-    private onRotate(event: MouseEvent, mode: TransformModeRotate) {
+    private onRotate(event: Drag.Event, mode: TransformModeRotate) {
         const mouseViewStart = vec2.clone(mode.mouseViewStart);
-        const mouseView = this.mouseEventToViewCoords(event);
+        const mouseView = this.dragToViewCoords(event.drags[0] as Drag.Pos);
 
         const rotationDelta = vec2.signedAngle(mouseViewStart, mouseView);
         let rotationNew = mode.rotationStart - rotationDelta;
 
-        if (event.ctrlKey) {
+        if (event.parent.ctrlKey) {
             rotationNew /= Math.PI / 12;
             rotationNew = Math.round(rotationNew);
             rotationNew *= Math.PI / 12;
@@ -144,8 +165,8 @@ class CameraController {
             this.cameraScaleStart * Math.pow(ZOOM_FACTOR, this.zoomLevel);
     }
 
-    private getCursorStyle(event: MouseEvent): string {
-        if (event.buttons & 1 && this.mode.kind !== null) {
+    private getCursorStyle(): string {
+        if (this.mode.kind !== null) {
             return "grabbing";
         }
 

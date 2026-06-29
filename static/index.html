@@ -2,7 +2,10 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no"
+        />
         <title>Wallpaper Groups</title>
         <link rel="icon" href="favicon.ico" type="image/ico" />
         <link rel="stylesheet" href="styles.css" />
@@ -15,55 +18,62 @@
         </header>
         <div class="output-canvas-div" id="output-canvas-div">
             <canvas class="output-canvas" id="output-canvas"></canvas>
-            <div class="tex-region-div">
-                <canvas
-                    class="tex-region-canvas"
-                    id="tex-region-canvas"
-                ></canvas>
-                <div class="tex-region-settings">
-                    <div class="tex-region-settings-top">
-                        <div class="group-select-container">
-                            <span class="label">Group:</span>
-                            <img
-                                class="group-select-arrow"
-                                id="group-select-prev"
-                                src="icons/nav-arrow-left.svg"
-                            />
-                            <select
-                                autocomplete="off"
-                                id="group-select"
-                            ></select>
-                            <img
-                                class="group-select-arrow"
-                                id="group-select-next"
-                                src="icons/nav-arrow-right.svg"
-                            />
+            <div class="tex-region-outer">
+                <div class="tex-region-div">
+                    <canvas
+                        class="tex-region-canvas"
+                        id="tex-region-canvas"
+                    ></canvas>
+                    <div class="tex-region-settings">
+                        <div class="tex-region-settings-top">
+                            <div class="group-select-container">
+                                <span class="label">Group:</span>
+                                <img
+                                    class="group-select-arrow"
+                                    id="group-select-prev"
+                                    src="icons/nav-arrow-left.svg"
+                                />
+                                <select
+                                    autocomplete="off"
+                                    id="group-select"
+                                ></select>
+                                <img
+                                    class="group-select-arrow"
+                                    id="group-select-next"
+                                    src="icons/nav-arrow-right.svg"
+                                />
+                            </div>
+                            <button id="load-texture-button">
+                                Load texture
+                            </button>
                         </div>
-                        <button id="load-texture-button">Load texture</button>
-                    </div>
-                    <hr />
-                    <div class="tex-region-settings-bottom">
-                        <button id="save-output-button">Save output</button>
-                        <div id="save-output-collapsible">
-                            <div class="size-input-container">
-                                <span class="label">Width: </span>
-                                <input type="text" id="save-output-width" />
-                            </div>
-                            <div class="size-input-container">
-                                <span class="label">Height: </span>
-                                <input type="text" id="save-output-height" />
-                            </div>
-                            <div class="size-input-container">
-                                <img
-                                    class="save-output-icon"
-                                    id="save-output-download"
-                                    src="icons/download.svg"
-                                />
-                                <img
-                                    class="save-output-icon"
-                                    id="save-output-cancel"
-                                    src="icons/xmark.svg"
-                                />
+                        <hr />
+                        <div class="tex-region-settings-bottom">
+                            <button id="save-output-button">Save output</button>
+                            <div id="save-output-collapsible">
+                                <div class="size-input-container">
+                                    <span class="label">Width: </span>
+                                    <input type="text" id="save-output-width" />
+                                </div>
+                                <div class="size-input-container">
+                                    <span class="label">Height: </span>
+                                    <input
+                                        type="text"
+                                        id="save-output-height"
+                                    />
+                                </div>
+                                <div class="size-input-container">
+                                    <img
+                                        class="save-output-icon"
+                                        id="save-output-download"
+                                        src="icons/download.svg"
+                                    />
+                                    <img
+                                        class="save-output-icon"
+                                        id="save-output-cancel"
+                                        src="icons/xmark.svg"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

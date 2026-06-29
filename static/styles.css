@@ -2,6 +2,12 @@ html {
     height: 100%;
 }
 
+@media screen and ((max-width: 600px) or (max-height: 500px)) {
+    h1 {
+        font-size: large;
+    }
+}
+
 body {
     display: flex;
     flex-flow: column;
@@ -23,17 +29,35 @@ body {
     display: flex;
 }
 
-.tex-region-div {
+.tex-region-outer {
     position: absolute;
-    display: inline-block;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    pointer-events: none;
+}
+
+@media screen and (max-width: 600px) {
+    .tex-region-outer {
+        align-items: center;
+    }
+}
+
+.tex-region-div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 2rem;
     padding: 1rem;
     border: 6px solid;
     border-color: grey;
     background-color: white;
+    pointer-events: auto;
 }
 
 .tex-region-settings {
+    align-self: stretch;
     display: flex;
     flex-direction: column;
     align-items: flex-end;

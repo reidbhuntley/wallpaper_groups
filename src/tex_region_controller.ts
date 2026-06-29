@@ -1,6 +1,7 @@
 import { mat3, vec2, vec3 } from "gl-matrix";
 import { TexRegion } from "./tex_region";
 import { WallpaperGroup } from "./wallpaper_group";
+import { Drag } from "./drag";
 
 type TransformModeNone = { kind: null };
 
@@ -35,7 +36,7 @@ type TransformMode =
     | TransformModeRotate
     | TransformModeShear;
 
-type MouseTarget =
+type DragTarget =
     | null
     | "LEFT"
     | "BOTTOM"
@@ -47,8 +48,8 @@ type MouseTarget =
     | "LT"
     | "INSIDE";
 
-const EDGE_RADIUS = 1.0 / 48.0;
-const CORNER_RADIUS = 1.0 / 32.0;
+const EDGE_RADIUS = 11.0;
+const CORNER_RADIUS = 15.0;
 
 class TexRegionController {
     canvas: HTMLCanvasElement;
@@ -69,9 +70,16 @@ class TexRegionController {
         this.setGroup(this.group);
 
         this.canvas = canvas;
-        canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
-        window.addEventListener("mousemove", (e) => this.onMouseMove(e));
-        window.addEventListener("mouseup", (e) => this.onMouseUp(e));
+
+        const onEvent = (e: MouseEvent | TouchEvent) => {
+            this.onDragEvent(Drag.createEvent(e));
+        };
+        canvas.addEventListener("mousedown", onEvent);
+        window.addEventListener("mousemove", onEvent);
+        window.addEventListener("mouseup", onEvent);
+        canvas.addEventListener("touchstart", onEvent);
+        window.addEventListener("touchmove", onEvent, { passive: false });
+        window.addEventListener("touchend", onEvent);
         requestAnimationFrame(() => this.render());
     }
 
@@ -125,50 +133,55 @@ class TexRegionController {
         return out;
     }
 
-    mouseEventToTexCoords(event: MouseEvent): vec2 {
+    dragToTexCoords(drag: Drag.Pos): vec2 {
         const mat = this.getViewportToTexCoordMat();
-        return transformMouseCoords(event, mat);
+        return transformDragCoords(drag, mat);
     }
 
-    mouseEventToShearedExtentCoords(event: MouseEvent): vec2 {
+    dragToShearedExtentCoords(drag: Drag.Pos): vec2 {
         const mat = this.texRegion.getTexCoordToShearedExtentMat();
         mat3.multiply(mat, mat, this.getViewportToTexCoordMat());
-        return transformMouseCoords(event, mat);
+        return transformDragCoords(drag, mat);
     }
 
-    mouseEventToExtentCoords(event: MouseEvent): vec2 {
+    dragToExtentCoords(drag: Drag.Pos): vec2 {
         const mat = this.texRegion.getTexCoordToExtentMat();
         mat3.multiply(mat, mat, this.getViewportToTexCoordMat());
-        return transformMouseCoords(event, mat);
+        return transformDragCoords(drag, mat);
     }
 
-    mouseExtentCoordsToTarget(mouseCoords: vec2): MouseTarget {
+    dragExtentCoordsToTarget(dragCoords: vec2): DragTarget {
+        const scaleFactor = this.getScaleFactor();
+        const cornerRadius = CORNER_RADIUS / scaleFactor;
+
         const [extentLB, extentRT] = this.texRegion.getExtents();
         const corners = this.texRegion.getCorners();
         for (const [cornerName, corner] of corners) {
-            if (vec2.dist(corner, mouseCoords) <= CORNER_RADIUS) {
+            if (vec2.dist(corner, dragCoords) <= cornerRadius) {
                 return cornerName;
             }
         }
 
         const isInsideX =
-            mouseCoords[0] >= extentLB[0] && mouseCoords[0] <= extentRT[0];
+            dragCoords[0] >= extentLB[0] && dragCoords[0] <= extentRT[0];
         const isInsideY =
-            mouseCoords[1] >= extentLB[1] && mouseCoords[1] <= extentRT[1];
+            dragCoords[1] >= extentLB[1] && dragCoords[1] <= extentRT[1];
+
+        const edgeRadius = EDGE_RADIUS / scaleFactor;
 
         if (isInsideY) {
-            if (Math.abs(mouseCoords[0] - extentLB[0]) <= EDGE_RADIUS) {
+            if (Math.abs(dragCoords[0] - extentLB[0]) <= edgeRadius) {
                 return "LEFT";
             }
-            if (Math.abs(mouseCoords[0] - extentRT[0]) <= EDGE_RADIUS) {
+            if (Math.abs(dragCoords[0] - extentRT[0]) <= edgeRadius) {
                 return "RIGHT";
             }
         }
         if (isInsideX) {
-            if (Math.abs(mouseCoords[1] - extentLB[1]) <= EDGE_RADIUS) {
+            if (Math.abs(dragCoords[1] - extentLB[1]) <= edgeRadius) {
                 return "BOTTOM";
             }
-            if (Math.abs(mouseCoords[1] - extentRT[1]) <= EDGE_RADIUS) {
+            if (Math.abs(dragCoords[1] - extentRT[1]) <= edgeRadius) {
                 return "TOP";
             }
         }
@@ -180,67 +193,63 @@ class TexRegionController {
         return null;
     }
 
-    private onMouseDown(event: MouseEvent) {
-        event.preventDefault();
+    private onDragEvent(event: Drag.Event) {
+        const drag = event.drags[0];
+        let mouseExtent: vec2 | null = null;
+        let target: DragTarget = null;
 
-        const mouseExtent = this.mouseEventToExtentCoords(event);
-        const target = this.mouseExtentCoordsToTarget(mouseExtent);
-
-        this.mode = (() => {
-            switch (target) {
-                case null:
-                    return { kind: null };
-                case "INSIDE":
-                    return {
-                        kind: "TRANSLATE",
-                        mouseTexStart: this.mouseEventToTexCoords(event),
-                        translationStart: this.texRegion.getTranslation(),
-                    };
-                case "LEFT":
-                case "RIGHT":
-                    return {
-                        kind: "GROW",
-                        mouseExtentStart: mouseExtent,
-                        lengthStart: this.texRegion.getWidth(),
-                        edge: target,
-                    };
-                case "BOTTOM":
-                case "TOP":
-                    return {
-                        kind: "GROW",
-                        mouseExtentStart: mouseExtent,
-                        lengthStart: this.texRegion.getHeight(),
-                        edge: target,
-                    };
-                case "LB":
-                case "LT":
-                case "RB":
-                case "RT":
-                    if (event.altKey) {
-                        this.texRegion.normalize();
-                        return {
-                            kind: "SHEAR",
-                            corner: target,
-                        };
-                    } else {
-                        this.texRegion.normalize();
-                        return {
-                            kind: "ROTATE",
-                            mouseTexStart: this.mouseEventToTexCoords(event),
-                            rotationStart: this.texRegion.getRotation(),
-                        };
-                    }
-            }
-        })();
-    }
-
-    private onMouseUp(_event: MouseEvent) {
-        this.mode = { kind: null };
-    }
-
-    private onMouseMove(event: MouseEvent) {
-        if (!(event.buttons & 1)) {
+        if (drag === undefined || event.drags.length !== 1) {
             this.mode = { kind: null };
+        } else if (["mousedown", "touchstart"].includes(event.parent.type)) {
+            mouseExtent = this.dragToExtentCoords(drag);
+            target = this.dragExtentCoordsToTarget(mouseExtent);
+
+            this.mode = (() => {
+                switch (target) {
+                    case null:
+                        return { kind: null };
+                    case "INSIDE":
+                        return {
+                            kind: "TRANSLATE",
+                            mouseTexStart: this.dragToTexCoords(drag),
+                            translationStart: this.texRegion.getTranslation(),
+                        };
+                    case "LEFT":
+                    case "RIGHT":
+                        return {
+                            kind: "GROW",
+                            mouseExtentStart: mouseExtent,
+                            lengthStart: this.texRegion.getWidth(),
+                            edge: target,
+                        };
+                    case "BOTTOM":
+                    case "TOP":
+                        return {
+                            kind: "GROW",
+                            mouseExtentStart: mouseExtent,
+                            lengthStart: this.texRegion.getHeight(),
+                            edge: target,
+                        };
+                    case "LB":
+                    case "LT":
+                    case "RB":
+                    case "RT":
+                        if (event.parent.altKey) {
+                            this.texRegion.normalize();
+                            return {
+                                kind: "SHEAR",
+                                corner: target,
+                            };
+                        } else {
+                            this.texRegion.normalize();
+                            return {
+                                kind: "ROTATE",
+                                mouseTexStart: this.dragToTexCoords(drag),
+                                rotationStart: this.texRegion.getRotation(),
+                            };
+                        }
+                }
+            })();
         }
 
         switch (this.mode.kind) {
@@ -260,18 +269,24 @@ class TexRegionController {
                 break;
         }
 
-        this.canvas.style.cursor = this.getCursorStyle(event);
+        if (this.mode.kind !== null) {
+            event.parent.preventDefault();
+        }
+
+        this.canvas.style.cursor = this.getCursorStyle(target);
     }
 
-    private onTranslate(event: MouseEvent, mode: TransformModeTranslate) {
-        const out = this.mouseEventToTexCoords(event);
+    private onTranslate(event: Drag.Event, mode: TransformModeTranslate) {
+        const drag = event.drags[0] as Drag.Pos;
+        const out = this.dragToTexCoords(drag);
         vec2.sub(out, out, mode.mouseTexStart);
         vec2.add(out, out, mode.translationStart);
         this.texRegion.setTranslation(out);
     }
 
-    private onGrow(event: MouseEvent, mode: TransformModeGrow) {
-        const mousePos = this.mouseEventToExtentCoords(event);
+    private onGrow(event: Drag.Event, mode: TransformModeGrow) {
+        const drag = event.drags[0] as Drag.Pos;
+        const mousePos = this.dragToExtentCoords(drag);
         const lengthDelta = (() => {
             switch (mode.edge) {
                 case "LEFT":
@@ -292,14 +307,14 @@ class TexRegionController {
             switch (mode.edge) {
                 case "LEFT":
                 case "RIGHT":
-                    if (event.ctrlKey) {
+                    if (event.parent.ctrlKey) {
                         length = this.texRegion.getHeight();
                     }
                     this.texRegion.setWidth(length, mode.edge);
                     break;
                 case "BOTTOM":
                 case "TOP":
-                    if (event.ctrlKey) {
+                    if (event.parent.ctrlKey) {
                         length = this.texRegion.getWidth();
                     }
                     this.texRegion.setHeight(length, mode.edge);
@@ -325,9 +340,10 @@ class TexRegionController {
         this.heightDesired = this.texRegion.getHeight();
     }
 
-    private onRotate(event: MouseEvent, mode: TransformModeRotate) {
+    private onRotate(event: Drag.Event, mode: TransformModeRotate) {
+        const drag = event.drags[0] as Drag.Pos;
         const mouseTexStart = vec2.clone(mode.mouseTexStart);
-        const mouseTex = this.mouseEventToTexCoords(event);
+        const mouseTex = this.dragToTexCoords(drag);
 
         const centerTex = this.texRegion.getExtentCenterTexCoord();
         vec2.sub(mouseTexStart, mouseTexStart, centerTex);
@@ -336,7 +352,7 @@ class TexRegionController {
         const rotationDelta = vec2.signedAngle(mouseTexStart, mouseTex);
         let rotationNew = mode.rotationStart + rotationDelta;
 
-        if (event.ctrlKey) {
+        if (event.parent.ctrlKey) {
             rotationNew /= Math.PI / 12;
             rotationNew = Math.round(rotationNew);
             rotationNew *= Math.PI / 12;
@@ -345,12 +361,13 @@ class TexRegionController {
         this.texRegion.setRotation(rotationNew);
     }
 
-    private onShear(event: MouseEvent, mode: TransformModeShear) {
+    private onShear(event: Drag.Event, mode: TransformModeShear) {
         if (!this.group.getPattern().canShear) {
             return;
         }
 
-        const mousePos = this.mouseEventToShearedExtentCoords(event);
+        const drag = event.drags[0] as Drag.Pos;
+        const mousePos = this.dragToShearedExtentCoords(drag);
         const extents = this.texRegion.getExtents();
         const [referenceExtent, sign] = (() => {
             switch (mode.corner) {
@@ -380,13 +397,11 @@ class TexRegionController {
         });
     }
 
-    private getCursorStyle(event: MouseEvent): string {
-        if (event.buttons & 1 && this.mode.kind !== null) {
+    private getCursorStyle(target: DragTarget): string {
+        if (this.mode.kind !== null) {
             return "grabbing";
         }
 
-        const mouseExtent = this.mouseEventToExtentCoords(event);
-        const target = this.mouseExtentCoordsToTarget(mouseExtent);
         switch (target) {
             case null:
             case "INSIDE":
@@ -486,7 +501,7 @@ class TexRegionController {
         ctx.lineWidth = 1.0;
         ctx.strokeStyle = "lightgrey";
         ctx.setLineDash([]);
-        const rad = CORNER_RADIUS * 0.4 * this.getScaleFactor();
+        const rad = CORNER_RADIUS * 0.3;
         for (const corner of corners) {
             ctx.beginPath();
             ctx.ellipse(corner[0], corner[1], rad, rad, 0, 0, 2 * Math.PI);
@@ -501,8 +516,8 @@ class TexRegionController {
     }
 }
 
-function transformMouseCoords(event: MouseEvent, mat: mat3): vec2 {
-    const out = vec3.fromValues(event.clientX, event.clientY, 1.0);
+function transformDragCoords(drag: Drag.Pos, mat: mat3): vec2 {
+    const out = vec3.fromValues(drag.clientX, drag.clientY, 1.0);
     vec3.transformMat3(out, out, mat);
     return vec2.fromValues(out[0], out[1]);
 }

@@ -37,12 +37,8 @@ const offscreenCanvas = new OffscreenCanvas(0, 0);
 let rendererMain: Renderer | null = null;
 let rendererOffscreen: Renderer | null = null;
 
-const glMain = outputCanvas.getContext("webgl", {
-    antialias: true,
-});
-const glOffscreen = offscreenCanvas.getContext("webgl", {
-    antialias: true,
-});
+const glMain = outputCanvas.getContext("webgl2");
+const glOffscreen = offscreenCanvas.getContext("webgl2");
 
 if (glMain === null || glOffscreen === null) {
     alert(

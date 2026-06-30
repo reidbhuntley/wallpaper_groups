@@ -5,14 +5,14 @@ import { Lattice } from "./lattice";
 import type { TexRegion } from "./tex_region";
 import { WallpaperGroup } from "./wallpaper_group";
 
-const vertexSrc = `
-    attribute vec2 aVertexPosition;
-    attribute vec2 aTextureCoord;
+const vertexSrc = `#version 300 es
+    in vec2 aVertexPosition;
+    in vec2 aTextureCoord;
 
     uniform mat3 uLatticeMatrix;
     uniform mat3 uTexCoordMatrix;
 
-    varying highp vec2 vTextureCoord;
+    out highp vec2 vTextureCoord;
 
     void main(void) {
         gl_Position = vec4((uLatticeMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
@@ -20,13 +20,17 @@ const vertexSrc = `
     }
 `;
 
-const fragmentSrc = `
-    varying highp vec2 vTextureCoord;
+const fragmentSrc = `#version 300 es
+    precision highp float;
+
+    in highp vec2 vTextureCoord;
 
     uniform sampler2D uSampler;
 
+    out vec4 outputColor;
+
     void main(void) {
-        gl_FragColor = texture2D(uSampler, vTextureCoord);
+        outputColor = texture(uSampler, vTextureCoord);
     }
 `;
 
@@ -190,9 +194,7 @@ class Renderer {
             bitmap,
         );
 
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.generateMipmap(gl.TEXTURE_2D);
     }
 
     getTexCoordToRectTexCoordMat(): mat3 {

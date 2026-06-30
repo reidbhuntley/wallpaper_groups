@@ -15,6 +15,14 @@
     <body>
         <header>
             <h1 class="title">Wallpaper Groups</h1>
+            <div class="nav-popup-buttons-container">
+                <span class="nav-popup-button" id="about-popup-open"
+                    >About</span
+                >
+                <span class="nav-popup-button" id="controls-popup-open"
+                    >Controls</span
+                >
+            </div>
         </header>
         <div class="output-canvas-div" id="output-canvas-div">
             <canvas class="output-canvas" id="output-canvas"></canvas>
@@ -79,6 +87,111 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="popup-background" id="about-popup">
+            <div class="popup-margin"></div>
+            <div class="popup">
+                <img class="popup-close-btn" src="icons/xmark.svg" />
+                <h2>What Are Wallpaper Groups?</h2>
+                <p>
+                    Throughout our day-to-day lives, we come across many
+                    different two-dimensional repeating patterns, such as those
+                    seen in floor tilings, textiles, and wallpapers.
+                    <i>Wallpaper groups</i> are a way to mathematically classify
+                    these patterns based on their symmetries.
+                </p>
+                <p>
+                    A <i>symmetry</i> is a transformation of a pattern that
+                    leaves the pattern looking exactly the same as before it was
+                    applied. When dealing with two-dimensional patterns, there
+                    are four possible types of symmetry that may be present:
+                </p>
+                <ul>
+                    <li>
+                        <b>Translation</b>: a shift of some distance in some
+                        direction
+                        <i
+                            >(since wallpaper patterns repeat, they all
+                            inherently have this kind of symmetry)</i
+                        >
+                    </li>
+                    <li>
+                        <b>Rotation</b>: a turn around some point for some
+                        number of degrees
+                    </li>
+                    <li><b>Reflection</b>: a mirroring across some line</li>
+                    <li>
+                        <b>Glide reflection</b>: a mirroring across some line,
+                        followed by a shift of some distance in the direction of
+                        that line
+                    </li>
+                </ul>
+                <p>
+                    Based on which and how many of these symmetries a pattern
+                    has, it can be classified into exactly one of the 17
+                    wallpaper groups. For example, the group
+                    <span class="group-name">p1</span> contains all the patterns
+                    with no symmetries (other than the inherent translational
+                    symmetries), <span class="group-name">p2</span> contains the
+                    patterns with only 180° rotational symmetries, and
+                    <span class="group-name">pm</span> contains those with only
+                    mirror symmetries across one axis.
+                </p>
+                <p>
+                    On this site, you can generate your own patterns by choosing
+                    a group and a source texture. Explore all 17 of the groups
+                    and see if you can spot all the symmetries each one
+                    contains!
+                </p>
+            </div>
+            <div class="popup-margin"></div>
+        </div>
+        <div class="popup-background" id="controls-popup">
+            <div class="popup-margin"></div>
+            <div class="popup">
+                <img class="popup-close-btn" src="icons/xmark.svg" />
+                <h2>Site Controls</h2>
+                <h3>Selected Texture Region</h3>
+                <ul>
+                    <li>To move: Drag the inner area</li>
+                    <li>To resize: Drag an edge</li>
+                    <li>
+                        To force dimensions to be square:
+                        <kbd>Ctrl</kbd> + drag an edge
+                    </li>
+                    <li>To rotate: Drag a corner</li>
+                    <li>
+                        To snap rotation to 15° intervals: <kbd>Ctrl</kbd> +
+                        drag a corner
+                    </li>
+                    <li>
+                        To shear: <kbd>Alt</kbd> + drag a corner
+                        <i
+                            >(only available for groups
+                            <span class="group-name">p1</span> and
+                            <span class="group-name">p2</span>)</i
+                        >
+                    </li>
+                </ul>
+                <h3>Output Pattern</h3>
+                <ul>
+                    <li>To move: Drag anywhere</li>
+                    <li>
+                        To move back to the origin: <kbd>Ctrl</kbd> + drag
+                        anywhere
+                    </li>
+                    <li>To zoom: Scroll wheel (or pinch on mobile)</li>
+                    <li>
+                        To rotate: <kbd>Shift</kbd> + drag anywhere (or pinch on
+                        mobile)
+                    </li>
+                    <li>
+                        To snap rotation to 15° intervals: <kbd>Ctrl</kbd> +
+                        <kbd>Shift</kbd> + drag a corner
+                    </li>
+                </ul>
+            </div>
+            <div class="popup-margin"></div>
         </div>
     </body>
 </html>

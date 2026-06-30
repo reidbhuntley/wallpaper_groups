@@ -1,5 +1,6 @@
 import { CameraController } from "./camera_controller";
 import { GroupSelectController } from "./group_select_controller";
+import { PopupController } from "./popup_controller";
 import { Renderer } from "./renderer";
 import { TexRegionController } from "./tex_region_controller";
 import { WallpaperGroup, type WallpaperGroupKind } from "./wallpaper_group";
@@ -219,3 +220,30 @@ saveOutputDownloadBtn.addEventListener("click", () => {
 
     closeSaveOutputCollapsible();
 });
+
+// Set up popups
+
+const aboutPopup = {
+    openButton: document.getElementById("about-popup-open") as HTMLElement,
+    body: document.getElementById("about-popup") as HTMLElement,
+};
+const controlsPopup = {
+    openButton: document.getElementById("controls-popup-open") as HTMLElement,
+    body: document.getElementById("controls-popup") as HTMLElement,
+};
+const closeBtns = Array.from(
+    document.getElementsByClassName("popup-close-btn"),
+).concat(Array.from(document.getElementsByClassName("popup-background")));
+
+const popupController = new PopupController(
+    [aboutPopup, controlsPopup],
+    closeBtns,
+);
+
+const LOCAL_STORAGE_KEY_HAS_CLOSED = "hasClosed";
+if (localStorage.getItem(LOCAL_STORAGE_KEY_HAS_CLOSED) === null) {
+    popupController.open(aboutPopup.openButton);
+    popupController.onClose = () => {
+        localStorage.setItem(LOCAL_STORAGE_KEY_HAS_CLOSED, "true");
+    };
+}

@@ -110,7 +110,7 @@ class TexRegionController {
 
     getScaleFactor(): number {
         const elem = this.canvas.getBoundingClientRect();
-        return Math.min(elem.width, elem.height);
+        return Math.max(elem.width, elem.height);
     }
 
     getViewportToTexCoordMat(): mat3 {
@@ -476,10 +476,12 @@ class TexRegionController {
             ctx.closePath();
         };
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // show checkerboard pattern behind transparent images
+        renderCheckerboard(canvas, ctx);
+
         if (this.texture) {
             // crop texture to square
-            const texSize = Math.min(this.texture.width, this.texture.height);
+            const texSize = Math.max(this.texture.width, this.texture.height);
             const texWidth = (this.texture.width / texSize) * canvas.width;
             const texHeight = (this.texture.height / texSize) * canvas.height;
             ctx.drawImage(
@@ -529,6 +531,28 @@ function transformDragCoords(drag: Drag.Pos, mat: mat3): vec2 {
     const out = vec3.fromValues(drag.clientX, drag.clientY, 1.0);
     vec3.transformMat3(out, out, mat);
     return vec2.fromValues(out[0], out[1]);
+}
+
+function renderCheckerboard(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+) {
+    const SIZE = 10.0;
+    const PRIMARY_COLOR = "#eeeeee";
+    const SECONDARY_COLOR = "#dddddd";
+
+    const repeatX = Math.ceil(canvas.width / SIZE);
+    const repeatY = Math.ceil(canvas.height / SIZE);
+
+    for (let y = 0; y < repeatY; y++) {
+        for (let x = 0; x < repeatX; x++) {
+            let posX = x * SIZE;
+            let posY = y * SIZE;
+
+            ctx.fillStyle = x % 2 === y % 2 ? PRIMARY_COLOR : SECONDARY_COLOR;
+            ctx.fillRect(posX, posY, SIZE, SIZE);
+        }
+    }
 }
 
 export { TexRegionController };

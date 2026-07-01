@@ -198,7 +198,7 @@ class Renderer {
     }
 
     getTexCoordToRectTexCoordMat(): mat3 {
-        const texSize = Math.min(
+        const texSize = Math.max(
             this.textureSize.width,
             this.textureSize.height,
         );
